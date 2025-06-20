@@ -1,4 +1,5 @@
 import logging
+import os
 from io import BytesIO
 from telegram import Update, InputFile
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
@@ -9,6 +10,13 @@ logger = logging.getLogger(__name__)
 
 FONT_SHARP_PATH = "../assets/1.otf"
 FONT_ARG_PATH = "../assets/2.ttf"
+
+# TOKEN = os.environ.get('BOT_TOKEN')
+TOKEN  = '7254434247:AAGAXHd6uSLN0fVUlVDXTmiXAh2zpYCfUk0'
+
+if TOKEN is None:
+    raise RuntimeError("BOT_TOKEN environment variable is not set")
+
 
 def fit_fonts(draw, image_width, image_height):
     base_size = int(image_height * 0.05)
@@ -87,14 +95,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 def main():
-    TOKEN = "7254434247:AAGGxv8VmNxO5WCILgzqKpgzZp8EnaFfnq4"
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("arg", arg_command))
     app.add_handler(MessageHandler(filters.PHOTO & filters.CaptionRegex(r"(?i)/arg"), photo_with_arg))
 
-    app.run_polling()
+    app.run_polling(timeout=30)
 
 if __name__ == "__main__":
     main()
