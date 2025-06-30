@@ -1,3 +1,4 @@
+# .github/workflows/deploy.yml
 name: Deploy to Railway
 
 on:
@@ -37,4 +38,6 @@ jobs:
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-        run: railway up
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+        run: |
+          railway up --projectId $RAILWAY_PROJECT_ID
