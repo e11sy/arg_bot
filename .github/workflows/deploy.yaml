@@ -34,9 +34,15 @@ jobs:
           curl -sL https://railway.app/install.sh | sh
           echo "$HOME/.railway/bin" >> $GITHUB_PATH
 
+      - name: Link Railway project
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway login --token $RAILWAY_TOKEN
+          railway link --project ${{ secrets.RAILWAY_PROJECT_ID }}
+
       - name: Deploy to Railway
-        uses: railwayapp/railway-action@v1
-        with:
-          railwayToken: ${{ secrets.RAILWAY_TOKEN }}
-          botToken: ${{ secrets.BOT_TOKEN }}
-          environment: production
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: railway up
