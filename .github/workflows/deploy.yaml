@@ -13,7 +13,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name:       - name: Create Procfile for Railway start
+      - name: Create Procfile for Railway start
         run: |
           echo "web: python -m src.arg_bot.bot" > Procfile
 
