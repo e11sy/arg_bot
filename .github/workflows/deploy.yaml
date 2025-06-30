@@ -31,7 +31,7 @@ jobs:
       - name: Install Railway CLI
         run: |
           curl -sL https://railway.app/install.sh | sh
-          echo "::add-path::$HOME/.railway/bin"
+          echo "$HOME/.railway/bin" >> $GITHUB_PATH
 
       - name: Deploy to Railway
         env:
