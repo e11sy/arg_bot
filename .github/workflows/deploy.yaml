@@ -1,5 +1,48 @@
-uses: bervProject/railway-deploy@main
-env:
-  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-with:
-  service: "arg_bot"
+# .github/workflows/deploy.yml
+name: Deploy to Railway
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name:       - name: Create Procfile for Railway start
+        run: |
+          echo "web: python -m src.arg_bot.bot" > Procfile
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install package
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip setuptools wheel
+          pip install .
+
+      - name: Install Railway CLI
+        run: |
+          curl -sL https://railway.app/install.sh | sh
+          echo "$HOME/.railway/bin" >> $GITHUB_PATH
+
+      - name: Link Railway project
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway login --token $RAILWAY_TOKEN
+          railway link --project ${{ secrets.RAILWAY_PROJECT_ID }}
+
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: railway up
