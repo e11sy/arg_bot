@@ -1,1 +1,1 @@
-web: arg-bot
+web: python -m src.bot.bot

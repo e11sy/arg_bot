@@ -15,7 +15,7 @@ jobs:
 
       - name: Create Procfile for Railway start
         run: |
-          echo "web: python -m src.arg_bot.bot" > Procfile
+          echo "web: python -m src.bot.bot" > Procfile
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -33,13 +33,6 @@ jobs:
         run: |
           curl -sL https://railway.app/install.sh | sh
           echo "$HOME/.railway/bin" >> $GITHUB_PATH
-
-      - name: Link Railway project
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: |
-          railway login --token $RAILWAY_TOKEN
-          railway link --project ${{ secrets.RAILWAY_PROJECT_ID }}
 
       - name: Deploy to Railway
         env:
