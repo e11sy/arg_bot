@@ -1,0 +1,38 @@
+name: Deploy to Railway
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install package
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip setuptools wheel
+          pip install .
+
+      - name: Install Railway CLI
+        run: |
+          curl -sL https://railway.app/install.sh | sh
+          export PATH="$HOME/.railway/bin:$PATH"
+
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: |
+          railway login --token $RAILWAY_TOKEN
+          railway up --yes
