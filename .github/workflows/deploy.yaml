@@ -31,12 +31,11 @@ jobs:
       - name: Install Railway CLI
         run: |
           curl -sL https://railway.app/install.sh | sh
-          export PATH="$HOME/.railway/bin:$PATH"
+          echo "::add-path::$HOME/.railway/bin"
 
       - name: Deploy to Railway
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
         run: |
-          railway login --ci $RAILWAY_TOKEN
-          railway up --yes
+          railway up --yes --token $RAILWAY_TOKEN
