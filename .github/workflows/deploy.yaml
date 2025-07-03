@@ -34,6 +34,12 @@ jobs:
           curl -sL https://railway.app/install.sh | sh
           echo "$HOME/.railway/bin" >> $GITHUB_PATH
 
+      - name: Login Railway CLI
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway login --token $RAILWAY_TOKEN
+
       - name: Link Railway project
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
