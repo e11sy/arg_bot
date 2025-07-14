@@ -12,6 +12,9 @@ FONT_ARG_PATH = os.path.join(BASE_DIR, "..", "assets", "2.ttf")
 
 class ArgBot(BaseBot):
     def __init__(self, logger, redis_helper):
+        open(FONT_SHARP_PATH);
+        open(FONT_ARG_PATH);
+
         super().__init__(logger, redis_helper)
 
     def register_handlers(self, app: Application):
