@@ -3,7 +3,7 @@ from bots.manager_bot import ArgManagerBot
 from redis_helper.helper import RedisHelper
 import logging, os
 
-TOKEN = os.getenv("TELEGRAM_TOKEN")
+TOKEN = os.getenv("MANAGER_BOT_TOKEN")
 REDIS_URL = os.getenv("REDIS_URL")
 
 if __name__ == "__main__":
