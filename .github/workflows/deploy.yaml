@@ -37,10 +37,10 @@ jobs:
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          railway deploy --service arg-bot
+          railway up --service arg-bot
 
       - name: Deploy ManagerBot
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          railway deploy --service manager-bot
+          railway up --service manager-bot
