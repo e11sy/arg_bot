@@ -55,6 +55,9 @@ class ArgBot(BaseBot):
         self.logger.info("Отправлено изображение с текстом")
 
     def draw_arg_on_image(self, image: Image.Image) -> BytesIO:
+        print("FONT_SHARP_PATH =", FONT_SHARP_PATH)
+        print("Exists:", os.path.exists(FONT_SHARP_PATH))
+
         draw = ImageDraw.Draw(image)
         font_sharp, font_arg = self.fit_fonts(draw, image.width, image.height)
 
