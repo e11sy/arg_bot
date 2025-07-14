@@ -5,9 +5,9 @@ from telegram import Update, InputFile
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from bots.base_bot import BaseBot
 
-
-FONT_SHARP_PATH = "./assets/1.otf"
-FONT_ARG_PATH = "./assets/2.ttf"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FONT_SHARP_PATH = os.path.join(BASE_DIR, "..", "assets", "1.otf")
+FONT_ARG_PATH = os.path.join(BASE_DIR, "..", "assets", "2.ttf")
 
 
 class ArgBot(BaseBot):
