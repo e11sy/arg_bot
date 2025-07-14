@@ -1,7 +1,8 @@
 import os
+import asyncio
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
-from telegram import Update, InputFile
+from telegram import Update, InputFile, Bot
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from bots.base_bot import BaseBot
 
@@ -9,23 +10,28 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FONT_SHARP_PATH = os.path.join(BASE_DIR, "..", "assets", "1.otf")
 FONT_ARG_PATH = os.path.join(BASE_DIR, "..", "assets", "2.ttf")
 
+# Fail fast if fonts missing
+for font_path in [FONT_SHARP_PATH, FONT_ARG_PATH]:
+    if not os.path.exists(font_path):
+        raise FileNotFoundError(f"Missing font file: {font_path}")
 
 class ArgBot(BaseBot):
     def __init__(self, logger, redis_helper):
-        open(FONT_SHARP_PATH);
-        open(FONT_ARG_PATH);
-
         super().__init__(logger, redis_helper)
+        self._bg_task = None  # Background task for broadcasts
 
     def register_handlers(self, app: Application):
         app.add_handler(CommandHandler("start", self.handle_start))
         app.add_handler(CommandHandler("arg", self.arg_command))
         app.add_handler(MessageHandler(filters.PHOTO & filters.CaptionRegex(r"(?i)/arg"), self.photo_with_arg))
+        self.start_background_tasks(app)
+
+    def start_background_tasks(self, app: Application):
+        self._bg_task = asyncio.create_task(self._broadcast_loop(app.bot))
 
     async def handle_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_id = update.effective_chat.id
         self.redis.add_chat_id(chat_id)
-
         await update.message.reply_text(
             "Пришли фото с подписью /arg или ответь командой /arg на сообщение с фото — и я наложу надпись '#arg'."
         )
@@ -58,9 +64,6 @@ class ArgBot(BaseBot):
         self.logger.info("Отправлено изображение с текстом")
 
     def draw_arg_on_image(self, image: Image.Image) -> BytesIO:
-        print("FONT_SHARP_PATH =", FONT_SHARP_PATH)
-        print("Exists:", os.path.exists(FONT_SHARP_PATH))
-
         draw = ImageDraw.Draw(image)
         font_sharp, font_arg = self.fit_fonts(draw, image.width, image.height)
 
@@ -101,3 +104,23 @@ class ArgBot(BaseBot):
             if total_width <= image_width * 0.95:
                 return font_sharp, font_arg
         return ImageFont.truetype(str(FONT_SHARP_PATH), 12), ImageFont.truetype(str(FONT_ARG_PATH), 12)
+
+    async def _broadcast_loop(self, bot: Bot):
+        async for message in self.redis.subscribe_to_broadcasts():
+            try:
+                chat_ids = self.redis.get_all_chat_ids()
+                content_type = message.get("content_type")
+
+                if content_type == "raw_message":
+                    origin_chat = message.get("chat_id")
+                    message_id = message.get("message_id")
+                    for chat_id in chat_ids:
+                        try:
+                            await bot.copy_message(chat_id=chat_id, from_chat_id=origin_chat, message_id=message_id)
+                        except Exception as e:
+                            self.logger.warning(f"Failed to copy message to {chat_id}: {e}")
+                else:
+                    raise RuntimeError("Unsupported content_type.")
+
+            except Exception as e:
+                self.logger.error(f"Broadcast loop error: {e}")

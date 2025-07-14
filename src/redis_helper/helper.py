@@ -1,9 +1,9 @@
-import os
 import redis
 import logging
 import json
 from typing import AsyncGenerator
 import asyncio
+from telegram import Message
 
 logger = logging.getLogger(__name__)
 
@@ -50,24 +50,16 @@ class RedisHelper:
             logger.error(f"Error retrieving chat_ids from Redis: {e}")
             return []
 
-    def publish_broadcast(self, content_type: str, payload: dict) -> bool:
-        """
-        Publish a broadcast message to all listeners.
-
-        :param content_type: 'text', 'photo', 'audio', etc.
-        :param payload: A dict that includes all necessary fields (like 'text', 'file_id', 'caption')
-        """
+    def publish_raw_message(self, message: Message) -> bool:
         try:
-            message = json.dumps({
-                "type": "broadcast",
-                "content_type": content_type,
-                **payload
-            })
-            self.client.publish(self.BROADCAST_CHANNEL, message)
-            logger.info("Published broadcast to Redis.")
+            self.client.publish(self.BROADCAST_CHANNEL, json.dumps({
+                "content_type": "raw_message",
+                "chat_id": message.chat_id,
+                "message_id": message.message_id
+            }))
             return True
         except Exception as e:
-            logger.error(f"Failed to publish broadcast: {e}")
+            logger.error(f"Failed to publish raw message: {e}")
             return False
 
     async def subscribe_to_broadcasts(self) -> AsyncGenerator[dict, None]:

@@ -1,4 +1,4 @@
-from telegram import Update, Message, InputFile
+from telegram import Update, Message
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -62,21 +62,5 @@ class ArgManagerBot(BaseBot):
         self.waiting_for_message.remove(chat_id)
 
         # Handle broadcast
-        if message.text:
-            self.redis.publish_broadcast("text", {"text": message.text})
-            await message.reply_text("Текстовое сообщение отправлено.")
-        elif message.photo:
-            photo = message.photo[-1]  # highest resolution
-            self.redis.publish_broadcast("photo", {
-                "file_id": photo.file_id,
-                "caption": message.caption or ""
-            })
-            await message.reply_text("Фото отправлено.")
-        elif message.audio:
-            self.redis.publish_broadcast("audio", {
-                "file_id": message.audio.file_id,
-                "caption": message.caption or ""
-            })
-            await message.reply_text("Аудио отправлено.")
-        else:
-            await message.reply_text("Тип сообщения не поддерживается.")
+        self.redis.publish_raw_message(message)
+
