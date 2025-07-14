@@ -11,8 +11,7 @@ class RedisHelper:
     BROADCAST_CHANNEL = "broadcasts"
     AUTHORIZED_CHATS_KEY = "authorized_chats"
 
-    def __init__(self):
-        redis_url = os.getenv("REDIS_URL")
+    def __init__(self, redis_url: str = None):
         if not redis_url:
             raise RuntimeError("REDIS_URL environment variable is not set")
         self.client = redis.Redis.from_url(redis_url, decode_responses=True)  # decode=True for str payloads
