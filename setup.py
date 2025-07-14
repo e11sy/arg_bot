@@ -12,12 +12,8 @@ setup(
         "pillow>=11.2.1",
         "requests>=2.32.4",
         "aiohttp>=3.12.13",
+        "redis>=5.0.4",
     ],
     package_dir={"": "src"},
     packages=find_packages(where="src"),
-    entry_points={
-        "console_scripts": [
-            "arg-bot=arg_bot.bot:main",
-        ],
-    },
 )

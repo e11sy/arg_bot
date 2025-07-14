@@ -2,3 +2,4 @@ python-telegram-bot
 pillow
 requests
 aiohttp
+redis

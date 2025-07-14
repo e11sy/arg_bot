@@ -1,5 +1,4 @@
-# .github/workflows/deploy.yml
-name: Deploy to Railway
+name: Deploy Bots to Railway
 
 on:
   push:
@@ -9,41 +8,36 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Create Procfile for Railway start
-        run: |
-          echo "web: python -m src.bot.bot" > Procfile
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.x'
+          python-version: '3.11'
 
-      - name: Install package
+      - name: Install dependencies
         run: |
           python -m venv .venv
           source .venv/bin/activate
-          pip install --upgrade pip setuptools wheel
-          pip install .
+          pip install --upgrade pip
+          pip install -r requirements.txt
 
       - name: Install Railway CLI
         run: |
           curl -sL https://railway.app/install.sh | sh
           echo "$HOME/.railway/bin" >> $GITHUB_PATH
 
-      # - name: Link Railway project
-      #   env:
-      #     RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-      #   run: |
-      #     railway link --project ${{ secrets.RAILWAY_PROJECT_ID }} --service arg-bot
-
-      - name: Deploy to Railway
+      - name: Deploy ArgBot
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
         run: |
-          railway up --service arg-bot
+          railway deploy --service arg-bot
+
+      - name: Deploy ManagerBot
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway deploy --service manager-bot
