@@ -8,6 +8,11 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - arg-bot
+          - manager-bot
 
     steps:
       - name: Checkout repository
@@ -33,16 +38,18 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli
 
-      - name: Deploy ArgBot
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          CI: false
+      - name: Write dynamic Procfile for ${{ matrix.service }}
         run: |
-          railway up --service arg-bot
+          if [ "${{ matrix.service }}" = "arg-bot" ]; then
+            echo "web: PYTHONPATH=src python -m runners.run_arg" > Procfile
+          elif [ "${{ matrix.service }}" = "manager-bot" ]; then
+            echo "web: PYTHONPATH=src python -m runners.run_manager" > Procfile
+          fi
+          cat Procfile
 
-      - name: Deploy ManagerBot
+      - name: Deploy ${{ matrix.service }} to Railway
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           CI: false
         run: |
-          railway up --service manager-bot
+          railway up --service ${{ matrix.service }}
