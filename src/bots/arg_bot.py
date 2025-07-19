@@ -18,16 +18,18 @@ for font_path in [FONT_SHARP_PATH, FONT_ARG_PATH]:
 class ArgBot(BaseBot):
     def __init__(self, logger, redis_helper):
         super().__init__(logger, redis_helper)
-        self._bg_task = None  # Background task for broadcasts
+        self._bg_task = None
 
     def register_handlers(self, app: Application):
         app.add_handler(CommandHandler("start", self.handle_start))
         app.add_handler(CommandHandler("arg", self.arg_command))
         app.add_handler(MessageHandler(filters.PHOTO & filters.CaptionRegex(r"(?i)/arg"), self.photo_with_arg))
-        self.start_background_tasks(app)
 
-    def start_background_tasks(self, app: Application):
+        app.post_init = self.on_startup
+
+    async def on_startup(self, app: Application):
         self._bg_task = asyncio.create_task(self._broadcast_loop(app.bot))
+        self.logger.info("Broadcast loop started.")
 
     async def handle_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_id = update.effective_chat.id
