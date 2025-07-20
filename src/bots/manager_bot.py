@@ -57,10 +57,16 @@ class ArgManagerBot(BaseBot):
         message: Message = update.message
 
         if chat_id not in self.waiting_for_message:
-            return  # Ignore unrelated messages
+            return
 
         self.waiting_for_message.remove(chat_id)
 
-        # Handle broadcast
-        self.redis.publish_raw_message(message)
-
+        try:
+            copied = await context.bot.copy_message(
+                chat_id=chat_id,
+                from_chat_id=message.chat_id,
+                message_id=message.message_id
+            )
+            self.redis.publish_raw_message(copied)
+        except Exception as e:
+            self.logger.error(f"Failed to copy and broadcast message: {e}")

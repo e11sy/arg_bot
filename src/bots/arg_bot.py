@@ -10,7 +10,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FONT_SHARP_PATH = os.path.join(BASE_DIR, "..", "assets", "1.otf")
 FONT_ARG_PATH = os.path.join(BASE_DIR, "..", "assets", "2.ttf")
 
-# Fail fast if fonts missing
 for font_path in [FONT_SHARP_PATH, FONT_ARG_PATH]:
     if not os.path.exists(font_path):
         raise FileNotFoundError(f"Missing font file: {font_path}")
@@ -24,7 +23,6 @@ class ArgBot(BaseBot):
         app.add_handler(CommandHandler("start", self.handle_start))
         app.add_handler(CommandHandler("arg", self.arg_command))
         app.add_handler(MessageHandler(filters.PHOTO & filters.CaptionRegex(r"(?i)/arg"), self.photo_with_arg))
-
         app.post_init = self.on_startup
 
     async def on_startup(self, app: Application):
