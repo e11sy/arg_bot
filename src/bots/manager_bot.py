@@ -58,22 +58,24 @@ class ArgManagerBot(BaseBot):
         message: Message = update.message
 
         if chat_id not in self.waiting_for_message:
-            return  # Ignore unrelated messages
+            return
 
         self.waiting_for_message.remove(chat_id)
 
-        try:
-            copied_message = await context.bot.copy_message(
-                chat_id=chat_id,  # copy to self
-                from_chat_id=chat_id,
-                message_id=message.message_id
+        sent = None
+        if message.photo:
+            photo = message.photo[-1].file_id
+            sent = await update.message.reply_photo(
+                photo=photo,
+                caption=message.caption_html or "",
+                parse_mode="HTML"
             )
-            self.redis.client.publish(self.redis.BROADCAST_CHANNEL, json.dumps({
-                "content_type": "raw_message",
-                "chat_id": chat_id,
-                "message_id": copied_message.message_id
-            }))
+        elif message.text:
+            sent = await update.message.reply_text(message.text_html, parse_mode="HTML")
+
+        if sent:
+            self.redis.publish_raw_message(sent)
             await update.message.reply_text("Сообщение отправлено всем пользователям.")
-        except Exception as e:
-            self.logger.error(f"Failed to prepare broadcast: {e}")
-            await update.message.reply_text("Ошибка при подготовке рассылки.")
+        else:
+            await update.message.reply_text("Тип сообщения не поддерживается.")
+
