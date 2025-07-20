@@ -53,27 +53,27 @@ class ArgManagerBot(BaseBot):
         self.waiting_for_message.add(chat_id)
         await update.message.reply_text("Жду ваше сообщение для рассылки (текст, фото, аудио и т.д.).")
 
-async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    chat_id = update.effective_chat.id
-    message: Message = update.message
+    async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        chat_id = update.effective_chat.id
+        message: Message = update.message
 
-    if chat_id not in self.waiting_for_message:
-        return  # Ignore unrelated messages
+        if chat_id not in self.waiting_for_message:
+            return  # Ignore unrelated messages
 
-    self.waiting_for_message.remove(chat_id)
+        self.waiting_for_message.remove(chat_id)
 
-    try:
-        copied_message = await context.bot.copy_message(
-            chat_id=chat_id,  # copy to self
-            from_chat_id=chat_id,
-            message_id=message.message_id
-        )
-        self.redis.client.publish(self.redis.BROADCAST_CHANNEL, json.dumps({
-            "content_type": "raw_message",
-            "chat_id": chat_id,
-            "message_id": copied_message.message_id
-        }))
-        await update.message.reply_text("Сообщение отправлено всем пользователям.")
-    except Exception as e:
-        self.logger.error(f"Failed to prepare broadcast: {e}")
-        await update.message.reply_text("Ошибка при подготовке рассылки.")
+        try:
+            copied_message = await context.bot.copy_message(
+                chat_id=chat_id,  # copy to self
+                from_chat_id=chat_id,
+                message_id=message.message_id
+            )
+            self.redis.client.publish(self.redis.BROADCAST_CHANNEL, json.dumps({
+                "content_type": "raw_message",
+                "chat_id": chat_id,
+                "message_id": copied_message.message_id
+            }))
+            await update.message.reply_text("Сообщение отправлено всем пользователям.")
+        except Exception as e:
+            self.logger.error(f"Failed to prepare broadcast: {e}")
+            await update.message.reply_text("Ошибка при подготовке рассылки.")
