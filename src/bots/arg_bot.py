@@ -115,7 +115,7 @@ class ArgBot(BaseBot):
                     msg = item.get("message", {})
 
                     caption = msg.get("caption", "")
-                    parse_mode = "HTML" if "entities" in msg else None
+                    parse_mode = "HTML"
 
                     for chat_id in chat_ids:
                         try:
