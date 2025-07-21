@@ -62,23 +62,6 @@ class ArgManagerBot(BaseBot):
 
         self.waiting_for_message.remove(chat_id)
 
-        sent = None
-        if message.photo:
-            photo = message.photo[-1].file_id
-            sent = await update.message.reply_photo(
-                photo=photo,
-                caption=message.caption_html or "",
-                parse_mode="HTML"
-            )
-        elif message.text:
-            sent = await update.message.reply_text(message.text_html, parse_mode="HTML")
-
-        if sent:
-            print('publishing raw message to Redis')
-            print('sent: ', sent)
-
-            self.redis.publish_raw_message(sent)
-            await update.message.reply_text("Сообщение отправлено всем пользователям.")
-        else:
-            await update.message.reply_text("Тип сообщения не поддерживается.")
-
+        # Broadcast full raw message dict
+        message_dict = message.to_dict()
+        self.redis.publish_raw_dict(message_dict)

@@ -106,24 +106,39 @@ class ArgBot(BaseBot):
         return ImageFont.truetype(str(FONT_SHARP_PATH), 12), ImageFont.truetype(str(FONT_ARG_PATH), 12)
 
     async def _broadcast_loop(self, bot: Bot):
-        async for message in self.redis.subscribe_to_broadcasts():
+        async for item in self.redis.subscribe_to_broadcasts():
             try:
                 chat_ids = self.redis.get_all_chat_ids()
-                content_type = message.get("content_type")
+                content_type = item.get("content_type")
 
-                if content_type == "raw_message":
-                    origin_chat = message.get("chat_id")
-                    message_id = message.get("message_id")
+                if content_type == "message_dict":
+                    msg = item.get("message", {})
 
-                    print('origin_chat:', origin_chat)
-                    print('message_id:', message_id)
+                    caption = msg.get("caption", "")
+                    parse_mode = "HTML" if "entities" in msg else None
+
                     for chat_id in chat_ids:
                         try:
-                            await bot.copy_message(chat_id=chat_id, from_chat_id=origin_chat, message_id=message_id)
+                            if "photo" in msg:
+                                photo_file_id = msg["photo"][-1]["file_id"]
+                                await bot.send_photo(chat_id, photo=photo_file_id, caption=caption, parse_mode=parse_mode)
+                            elif "video" in msg:
+                                video_file_id = msg["video"]["file_id"]
+                                await bot.send_video(chat_id, video=video_file_id, caption=caption, parse_mode=parse_mode)
+                            elif "audio" in msg:
+                                audio_file_id = msg["audio"]["file_id"]
+                                await bot.send_audio(chat_id, audio=audio_file_id, caption=caption, parse_mode=parse_mode)
+                            elif "document" in msg:
+                                doc_file_id = msg["document"]["file_id"]
+                                await bot.send_document(chat_id, document=doc_file_id, caption=caption, parse_mode=parse_mode)
+                            elif "text" in msg:
+                                await bot.send_message(chat_id, text=msg["text"], parse_mode=parse_mode)
+                            else:
+                                self.logger.warning(f"Unsupported content in message: {msg}")
                         except Exception as e:
-                            self.logger.warning(f"Failed to copy message to {chat_id}: {e}")
+                            self.logger.warning(f"Failed to send message to {chat_id}: {e}")
                 else:
-                    raise RuntimeError("Unsupported content_type.")
+                    self.logger.warning(f"Unsupported content_type: {content_type}")
 
             except Exception as e:
                 self.logger.error(f"Broadcast loop error: {e}")

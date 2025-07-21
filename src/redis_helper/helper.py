@@ -50,17 +50,17 @@ class RedisHelper:
             logger.error(f"Error retrieving chat_ids from Redis: {e}")
             return []
 
-    def publish_raw_message(self, message: Message) -> bool:
+    def publish_raw_dict(self, message_dict: dict) -> bool:
         try:
             self.client.publish(self.BROADCAST_CHANNEL, json.dumps({
-                "content_type": "raw_message",
-                "chat_id": message.chat_id,
-                "message_id": message.message_id
+                "content_type": "message_dict",
+                "message": message_dict
             }))
             return True
         except Exception as e:
-            logger.error(f"Failed to publish raw message: {e}")
+            logger.error(f"Failed to publish raw message dict: {e}")
             return False
+
 
     async def subscribe_to_broadcasts(self) -> AsyncGenerator[dict, None]:
         """
