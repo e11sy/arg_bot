@@ -114,6 +114,9 @@ class ArgBot(BaseBot):
                 if content_type == "raw_message":
                     origin_chat = message.get("chat_id")
                     message_id = message.get("message_id")
+
+                    print('origin_chat:', origin_chat)
+                    print('message_id:', message_id)
                     for chat_id in chat_ids:
                         try:
                             await bot.copy_message(chat_id=chat_id, from_chat_id=origin_chat, message_id=message_id)

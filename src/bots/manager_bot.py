@@ -74,6 +74,9 @@ class ArgManagerBot(BaseBot):
             sent = await update.message.reply_text(message.text_html, parse_mode="HTML")
 
         if sent:
+            print('publishing raw message to Redis')
+            print('sent: ', sent)
+
             self.redis.publish_raw_message(sent)
             await update.message.reply_text("Сообщение отправлено всем пользователям.")
         else:
