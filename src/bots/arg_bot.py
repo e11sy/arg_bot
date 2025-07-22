@@ -107,7 +107,7 @@ class ArgBot(BaseBot):
                 return font_sharp, font_arg
         return ImageFont.truetype(str(FONT_SHARP_PATH), 12), ImageFont.truetype(str(FONT_ARG_PATH), 12)
 
-    def compose_send_instruction(self, bot: Bot, msg: dict, caption: str, parse_mode: str):
+    async def compose_send_instruction(self, bot: Bot, msg: dict, caption: str, parse_mode: str):
         if "photo" in msg:
             return {
                 "send_method": bot.send_photo,
@@ -145,7 +145,7 @@ class ArgBot(BaseBot):
             }
         elif "audio" in msg:
             # AUDIO MUST use requests due to 'thumb' requirement
-            return self.compose_audio_instruction(bot, msg["audio"], caption, parse_mode)
+            return await self.compose_audio_instruction(bot, msg["audio"], caption, parse_mode)
         else:
             raise ValueError(f"Unsupported message type: {msg}")
 
