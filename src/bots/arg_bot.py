@@ -149,7 +149,7 @@ class ArgBot(BaseBot):
         else:
             raise ValueError(f"Unsupported message type: {msg}")
 
-    async def compose_audio_instruction(bot: Bot, audio: dict, caption: str, parse_mode: str) -> Dict[str, Any]:
+    async def compose_audio_instruction(self, bot: Bot, audio: dict, caption: str, parse_mode: str) -> Dict[str, Any]:
         file_id = audio["file_id"]
         title = audio.get("title")
         performer = audio.get("performer")
