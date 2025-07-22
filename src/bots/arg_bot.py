@@ -1,10 +1,12 @@
 import os
 import asyncio
+import requests
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 from telegram import Update, InputFile, Bot
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from bots.base_bot import BaseBot
+from typing import Dict, Any
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FONT_SHARP_PATH = os.path.join(BASE_DIR, "..", "assets", "1.otf")
@@ -105,40 +107,117 @@ class ArgBot(BaseBot):
                 return font_sharp, font_arg
         return ImageFont.truetype(str(FONT_SHARP_PATH), 12), ImageFont.truetype(str(FONT_ARG_PATH), 12)
 
+    def compose_send_instruction(self, bot: Bot, msg: dict, caption: str, parse_mode: str):
+        if "photo" in msg:
+            return {
+                "send_method": bot.send_photo,
+                "send_args": {
+                    "photo": msg["photo"][-1]["file_id"],
+                    "caption": caption,
+                    "parse_mode": parse_mode,
+                }
+            }
+        elif "video" in msg:
+            return {
+                "send_method": bot.send_video,
+                "send_args": {
+                    "video": msg["video"]["file_id"],
+                    "caption": caption,
+                    "parse_mode": parse_mode,
+                }
+            }
+        elif "document" in msg:
+            return {
+                "send_method": bot.send_document,
+                "send_args": {
+                    "document": msg["document"]["file_id"],
+                    "caption": caption,
+                    "parse_mode": parse_mode,
+                }
+            }
+        elif "text" in msg:
+            return {
+                "send_method": bot.send_message,
+                "send_args": {
+                    "text": msg["text"],
+                    "parse_mode": parse_mode,
+                }
+            }
+        elif "audio" in msg:
+            # AUDIO MUST use requests due to 'thumb' requirement
+            return self.compose_audio_instruction(bot, msg["audio"], caption, parse_mode)
+        else:
+            raise ValueError(f"Unsupported message type: {msg}")
+
+    async def compose_audio_instruction(bot: Bot, audio: dict, caption: str, parse_mode: str) -> Dict[str, Any]:
+        file_id = audio["file_id"]
+        title = audio.get("title")
+        performer = audio.get("performer")
+        duration = audio.get("duration")
+        thumb_id = audio.get("thumb", {}).get("file_id")
+
+        # ⬇️ Download ONCE
+        audio_file = await bot.get_file(file_id)
+        audio_bytes = await audio_file.download_as_bytearray()
+
+        thumb_bytes = None
+        if thumb_id:
+            thumb_file = await bot.get_file(thumb_id)
+            thumb_bytes = await thumb_file.download_as_bytearray()
+
+        # ✅ Create reusable send method
+        def send_audio_to(chat_id: int):
+            files = {
+                "audio": ("audio.mp3", BytesIO(audio_bytes)),
+            }
+            if thumb_bytes:
+                files["thumb"] = ("thumb.jpg", BytesIO(thumb_bytes))
+
+            data = {
+                "chat_id": chat_id,
+                "caption": caption,
+                "parse_mode": parse_mode,
+                "title": title,
+                "performer": performer,
+                "duration": duration
+            }
+            data = {k: v for k, v in data.items() if v is not None}
+
+            url = f"https://api.telegram.org/bot{bot.token}/sendAudio"
+            response = requests.post(url, data=data, files=files)
+
+            if not response.ok:
+                raise RuntimeError(f"Telegram error: {response.text}")
+
+        return {
+            "send_method": send_audio_to,
+            "send_args": {}
+        }
+
+
     async def _broadcast_loop(self, bot: Bot):
         async for item in self.redis.subscribe_to_broadcasts():
             try:
+                if item.get("content_type") != "message_dict":
+                    self.logger.warning("Unsupported content_type.")
+                    continue
+
+                msg = item["message"]
                 chat_ids = self.redis.get_all_chat_ids()
-                content_type = item.get("content_type")
+                caption = msg.get("caption", "")
+                parse_mode = "HTML"
 
-                if content_type == "message_dict":
-                    msg = item.get("message", {})
+                try:
+                    send_instruction = await self.compose_send_instruction(bot, msg, caption, parse_mode)
+                except Exception as e:
+                    self.logger.error(f"Compose error: {e}")
+                    continue
 
-                    caption = msg.get("caption", "")
-                    parse_mode = "HTML"
-
-                    for chat_id in chat_ids:
-                        try:
-                            if "photo" in msg:
-                                photo_file_id = msg["photo"][-1]["file_id"]
-                                await bot.send_photo(chat_id, photo=photo_file_id, caption=caption, parse_mode=parse_mode)
-                            elif "video" in msg:
-                                video_file_id = msg["video"]["file_id"]
-                                await bot.send_video(chat_id, video=video_file_id, caption=caption, parse_mode=parse_mode)
-                            elif "audio" in msg:
-                                audio_file_id = msg["audio"]["file_id"]
-                                await bot.send_audio(chat_id, audio=audio_file_id, caption=caption, parse_mode=parse_mode)
-                            elif "document" in msg:
-                                doc_file_id = msg["document"]["file_id"]
-                                await bot.send_document(chat_id, document=doc_file_id, caption=caption, parse_mode=parse_mode)
-                            elif "text" in msg:
-                                await bot.send_message(chat_id, text=msg["text"], parse_mode=parse_mode)
-                            else:
-                                self.logger.warning(f"Unsupported content in message: {msg}")
-                        except Exception as e:
-                            self.logger.warning(f"Failed to send message to {chat_id}: {e}")
-                else:
-                    self.logger.warning(f"Unsupported content_type: {content_type}")
-
+                for chat_id in chat_ids:
+                    try:
+                        await send_instruction["send_method"](chat_id=chat_id, **send_instruction["send_args"])
+                        self.logger.info(f"Sent message to {chat_id}")
+                    except Exception as e:
+                        self.logger.warning(f"Failed to send to {chat_id}: {e}")
             except Exception as e:
                 self.logger.error(f"Broadcast loop error: {e}")
