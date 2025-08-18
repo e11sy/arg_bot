@@ -81,7 +81,7 @@ class ArgManagerBot(BaseBot):
 
         response_lines = []
         for i, item in enumerate(top_list[:10], start=1):
-            title = item.get("title", "Unknown")
+            title = item.get("title", "")
             username = item.get("username", "")
             count = item.get("count", 0)
             inviteLink = item.get("invite_link", "")
