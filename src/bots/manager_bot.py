@@ -81,11 +81,17 @@ class ArgManagerBot(BaseBot):
 
         response_lines = []
         for i, item in enumerate(top_list[:10], start=1):
-            title = item.get("chat_name", "Unknown")
+            title = item.get("title", "Unknown")
             count = item.get("count", 0)
             inviteLink = item.get("invite_link", "")
-            response_line = f'{i}. <a href="{inviteLink}">{title}</a> — {count}' if (inviteLink != None) else f'{i}. {title} — {count}'
+            response_line = ''
+
+            if title:
+                response_line = f'{i}. <a href="{inviteLink}">{title}</a> — {count}'
+            else:
+                response_line = f'{i}. {title} — {count}'
+            
             response_lines.append(response_line)
 
         response_text = "🏆 Топ участников по активности:\n" + "\n".join(response_lines)
-        await update.message.reply_text(response_text)
+        await update.message.reply_text(response_text, parse_mode="HTML")
