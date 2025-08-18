@@ -141,20 +141,23 @@ class RedisHelper:
         # Lua-script: if key exists -> HINCRBY count
         # else -> HSET all fields + count=1
         lua_script = """
-        if redis.call("EXISTS", KEYS[1]) == 1 then
-            redis.call("HINCRBY", KEYS[1], "count", 1)
+        local key = KEYS[1]
+        local args = ARGV
+        local n = #args
+        if redis.call("EXISTS", key) == 1 then
+            redis.call("HINCRBY", key, "count", 1)
             for i=1, n-1, 2 do
-              if args[i] == "invite_link" then
-                redis.call("HSET", KEYS[1], args[i], ARGV[1 + 1])
+                if args[i] == "invite_link" then
+                    redis.call("HSET", key, "invite_link", args[i+1])
+                end
             end
+            return redis.call("HGETALL", key)
         else
-            local args = ARGV
-            local n = #args
             for i=1, n-1, 2 do
-                redis.call("HSET", KEYS[1], args[i], args[i+1])
+                redis.call("HSET", key, args[i], args[i+1])
             end
-            redis.call("HSET", KEYS[1], "count", 1)
-            return 1
+            redis.call("HSET", key, "count", 1)
+            return redis.call("HGETALL", key)
         end
         """
 
