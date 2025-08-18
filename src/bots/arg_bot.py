@@ -67,6 +67,8 @@ class ArgBot(BaseBot):
 
         chat = update.effective_chat.to_dict()
 
+        self.logger.info(f"Saving metrics for chat {chat['id']}")
+
         # Try to generate an invite link (requires bot to be admin in the chat)
         invite_link = None
         try:
