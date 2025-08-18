@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 class RedisHelper:
     BROADCAST_CHANNEL = "broadcasts"
     AUTHORIZED_CHATS_KEY = "authorized_chats"
+    METRICS_KEY_PREFIX = "metrics"
 
     def __init__(self, redis_url: str = None):
         if not redis_url:
@@ -84,3 +85,78 @@ class RedisHelper:
         except Exception as e:
             logger.error(f"Redis subscription error: {e}")
             return
+        
+    def get_all_metrics(self) -> list[dict]:
+        """
+        Method that returns list of metrics for each chat that participates in the competition.
+        Each element of the list contains list of metrics for each chat.
+        """
+        try:
+            keys = self.client.keys(f"{self.METRICS_KEY_PREFIX}:*")
+            metrics_list = []
+
+            for key in keys:
+                data = self.client.hgetall(key)
+                if not data:
+                    continue
+
+                if "count" in data:
+                    try:
+                        data["count"] = int(data["count"])
+                    except ValueError:
+                        data["count"] = 0
+
+                chat_id_str = key.split(":")[1]
+                try:
+                    data["chat_id"] = int(chat_id_str)
+                except ValueError:
+                    data["chat_id"] = chat_id_str
+
+                metrics_list.append(data)
+
+            return metrics_list
+
+        except Exception as e:
+            logger.error(f"Error retrieving metrics from Redis: {e}")
+            return []
+        
+    def save_or_increment_metric(self, chat: dict) -> None:
+        """
+        Save the metrics for the chat or increment the counter of the existing one (atomically with Lua).
+        """
+        chat_id = chat["id"]
+        key = f"{self.METRICS_KEY_PREFIX}:{chat_id}"
+
+        fields = {
+            "id": chat["id"],
+            "type": chat.get("type"),
+            "title": chat.get("title"),
+            "username": chat.get("username"),
+            "invite_link": chat.get("invite_link"),
+        }
+        
+        # remove None values and convert to str
+        fields = {k: str(v) for k, v in fields.items() if v is not None}
+
+        # Lua-script: if key exists -> HINCRBY count
+        # else -> HSET all fields + count=1
+        lua_script = """
+        if redis.call("EXISTS", KEYS[1]) == 1 then
+            return redis.call("HINCRBY", KEYS[1], "count", 1)
+        else
+            local args = ARGV
+            local n = #args
+            for i=1, n-1, 2 do
+                redis.call("HSET", KEYS[1], args[i], args[i+1])
+            end
+            redis.call("HSET", KEYS[1], "count", 1)
+            return 1
+        end
+        """
+
+        args = []
+        for k, v in fields.items():
+            args.extend([k, v])
+
+        script = self.client.register_script(lua_script)
+        script(keys=[key], args=args)
