@@ -142,7 +142,11 @@ class RedisHelper:
         # else -> HSET all fields + count=1
         lua_script = """
         if redis.call("EXISTS", KEYS[1]) == 1 then
-            return redis.call("HINCRBY", KEYS[1], "count", 1)
+            redis.call("HINCRBY", KEYS[1], "count", 1)
+            for i=1, n-1, 2 do
+              if args[i] == "invite_link" then
+                redis.call("HSET", KEYS[1], args[i], ARGV[1 + 1])
+            end
         else
             local args = ARGV
             local n = #args
