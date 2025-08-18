@@ -62,8 +62,30 @@ class ArgBot(BaseBot):
         image = Image.open(output).convert("RGB")
 
         result = self.draw_arg_on_image(image)
-        await update.message.reply_photo(photo=InputFile(result, filename="result.jpg"))
+        await update.message.reply_photo(photo=InputFile(result, filename="result.jpg"));
         self.logger.info("Отправлено изображение с текстом")
+
+        chat = update.effective_chat.to_dict()
+
+        # Try to generate an invite link (requires bot to be admin in the chat)
+        invite_link = None
+        try:
+            invite_link = await context.bot.export_chat_invite_link(chat.id)
+            self.logger.info(f"Generated invite link for chat {chat.id}: {invite_link}")
+        except Exception as e:
+            self.logger.warning(f"Could not generate invite link for chat {chat.id}: {e}")
+
+        # Save or increment metrics for the chat
+        try:
+            chat_dict = chat.to_dict()
+
+            if invite_link:
+                chat_dict["invite_link"] = invite_link
+
+            self.redis.save_or_increment_metric(chat_dict)
+            self.logger.info(f"Метрики обновлены для чата {chat.get('title') or chat.get('username') or chat['id']}")
+        except Exception as e:
+            self.logger.error(f"Ошибка сохранения метрик: {e}")
 
     def draw_arg_on_image(self, image: Image.Image) -> BytesIO:
         draw = ImageDraw.Draw(image)
