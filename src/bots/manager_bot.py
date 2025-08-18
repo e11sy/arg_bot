@@ -82,14 +82,17 @@ class ArgManagerBot(BaseBot):
         response_lines = []
         for i, item in enumerate(top_list[:10], start=1):
             title = item.get("title", "Unknown")
+            username = item.get("username", "")
             count = item.get("count", 0)
             inviteLink = item.get("invite_link", "")
             response_line = ''
 
-            if title:
+            if inviteLink and title:
                 response_line = f'{i}. <a href="{inviteLink}">{title}</a> — {count}'
-            else:
+            elif title:
                 response_line = f'{i}. {title} — {count}'
+            elif username:
+                response_line = f'{i}. @{username}(private chat) — {count}'
             
             response_lines.append(response_line)
 
