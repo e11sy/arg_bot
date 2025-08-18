@@ -80,10 +80,12 @@ class ArgManagerBot(BaseBot):
         top_list = sorted(metrics, key=lambda x: x.get("count", 0), reverse=True)
 
         response_lines = []
-        for i, item in enumerate(top_list[:10], start=1):  # выводим топ 10
-            chat_name = item.get("chat_name", "Unknown")
+        for i, item in enumerate(top_list[:10], start=1):
+            title = item.get("chat_name", "Unknown")
             count = item.get("count", 0)
-            response_lines.append(f"{i}. {chat_name} — {count}")
+            inviteLink = item.get("invite_link", "")
+            response_line = f'{i}. <a href="{inviteLink}">{title}</a> — {count}' if (inviteLink != None) else f'{i}. {title} — {count}'
+            response_lines.append(response_line)
 
         response_text = "🏆 Топ участников по активности:\n" + "\n".join(response_lines)
         await update.message.reply_text(response_text)
