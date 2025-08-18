@@ -139,6 +139,13 @@ class ArgBot(BaseBot):
                     "parse_mode": parse_mode,
                 }
             }
+        elif "sticker" in msg:
+            return {
+                "send_method": bot.send_sticker,
+                "send_args": {
+                    "sticker": msg["sticker"]["file_id"]
+                }
+            }
         elif "video" in msg:
             return {
                 "send_method": bot.send_video,
