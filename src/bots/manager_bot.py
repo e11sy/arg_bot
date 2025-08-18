@@ -6,7 +6,7 @@ from telegram.ext import (
     ContextTypes,
     filters,
 )
-import json
+
 from bots.base_bot import BaseBot
 import os
 
@@ -22,6 +22,7 @@ class ArgManagerBot(BaseBot):
         app.add_handler(CommandHandler("start", self.handle_start))
         app.add_handler(CommandHandler("auth", self.handle_auth))
         app.add_handler(CommandHandler("send", self.handle_send))
+        app.add_handler(CommandHandler("top", self.handle_top))
         app.add_handler(MessageHandler(filters.ALL, self.handle_message))
 
     async def handle_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -62,6 +63,27 @@ class ArgManagerBot(BaseBot):
 
         self.waiting_for_message.remove(chat_id)
 
-        # Broadcast full raw message dict
         message_dict = message.to_dict()
         self.redis.publish_raw_dict(message_dict)
+
+    async def handle_top(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        chat_id = update.effective_chat.id
+        if not self.redis.is_authorized(chat_id):
+            await update.message.reply_text("Вы не авторизованы. Используйте /auth.")
+            return
+
+        metrics = self.redis.get_all_metrics()
+        if not metrics:
+            await update.message.reply_text("Нет данных для отображения.")
+            return
+
+        top_list = sorted(metrics, key=lambda x: x.get("count", 0), reverse=True)
+
+        response_lines = []
+        for i, item in enumerate(top_list[:10], start=1):  # выводим топ 10
+            chat_name = item.get("chat_name", "Unknown")
+            count = item.get("count", 0)
+            response_lines.append(f"{i}. {chat_name} — {count}")
+
+        response_text = "🏆 Топ участников по активности:\n" + "\n".join(response_lines)
+        await update.message.reply_text(response_text)
