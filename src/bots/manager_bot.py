@@ -80,19 +80,25 @@ class ArgManagerBot(BaseBot):
         top_list = sorted(metrics, key=lambda x: x.get("count", 0), reverse=True)
 
         response_lines = []
-        for i, item in enumerate(top_list[:10], start=1):
+        response_length = 0
+        for i, item in enumerate(top_list, start=1):
             title = item.get("title", "")
             username = item.get("username", "")
             count = item.get("count", 0)
             inviteLink = item.get("invite_link", "")
             response_line = ''
 
+            if response_length == 10: 
+              break;
+
             if inviteLink and title:
                 response_line = f'{i}. <a href="{inviteLink}">{title}</a> — {count}'
+                response_length += 1
             elif title:
                 response_line = f'{i}. {title} — {count}'
+                response_length += 1
             elif username:
-                response_line = f'{i}. @{username}(private chat) — {count}'
+                continue;
             
             response_lines.append(response_line)
 
