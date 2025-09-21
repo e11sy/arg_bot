@@ -86,7 +86,9 @@ class ArgManagerBot(BaseBot):
 
         response_lines = []
         response_length = 0
-        for i, item in enumerate(top_list, start=1):
+        
+        i = 1
+        for item in top_list:
             title = item.get("title", "")
             username = item.get("username", "")
             count = item.get("count", 0)
@@ -98,9 +100,11 @@ class ArgManagerBot(BaseBot):
 
             if inviteLink and title:
                 response_line = f'{i}. <a href="{inviteLink}">{title}</a> — {count}'
+                i += 1
                 response_length += 1
             elif title:
                 response_line = f'{i}. {title} — {count}'
+                i += 1
                 response_length += 1
             elif username:
                 continue;
@@ -121,7 +125,7 @@ class ArgManagerBot(BaseBot):
             f"Счётчики активности сброшены до 0 для {count} чатов."
         )
 
-     async def handle_channel_post(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def handle_channel_post(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         message: Message = update.channel_post
         if not message:
             return
