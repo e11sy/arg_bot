@@ -26,7 +26,7 @@ class ArgManagerBot(BaseBot):
         app.add_handler(CommandHandler("top", self.handle_top))
         app.add_handler(CommandHandler("clear", self.handle_clear))
         app.add_handler(MessageHandler(~filters.ALL, self.handle_message))
-
+        app.add_handler(MessageHandler(filters.UpdateType.CHANNEL_POST, self.handle_channel_post))
 
     async def handle_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text(
@@ -70,14 +70,6 @@ class ArgManagerBot(BaseBot):
                 "message": message_dict
             })
             return
-
-        # if the message is from the source channel, broadcast forward instructions
-        if message.chat and message.chat.id == self.channel_id:
-            self.redis.publish_raw_dict({
-                "content_type": "forward_from_channel",
-                "from_chat_id": self.channel_id,
-                "message_id": message.message_id,
-            })
 
     async def handle_top(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         chat_id = update.effective_chat.id
@@ -128,3 +120,16 @@ class ArgManagerBot(BaseBot):
         await update.message.reply_text(
             f"Счётчики активности сброшены до 0 для {count} чатов."
         )
+
+     async def handle_channel_post(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        message: Message = update.channel_post
+        if not message:
+            return
+
+        if message.chat.id == self.channel_id:
+            self.logger.info(f"Поймали пост из канала {self.channel_id}, msg_id={message.message_id}")
+            self.redis.publish_event({
+                "content_type": "forward_from_channel",
+                "from_chat_id": self.channel_id,
+                "message_id": message.message_id,
+            })
