@@ -132,7 +132,7 @@ class ArgManagerBot(BaseBot):
 
         if message.chat.id == self.channel_id:
             self.logger.info(f"Поймали пост из канала {self.channel_id}, msg_id={message.message_id}")
-            self.redis.publish_event({
+            self.redis.publish_raw_dict({
                 "content_type": "forward_from_channel",
                 "from_chat_id": self.channel_id,
                 "message_id": message.message_id,
