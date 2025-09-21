@@ -185,8 +185,8 @@ class ArgBot(BaseBot):
                         message_id=msg_id
                     )
                     self.logger.info(f"Forwarded channel message {msg_id} to {chat_id}")
-        except Exception as e:
-            self.logger.warning(f"Failed to forward to {chat_id}: {e}")
+                except Exception as e:
+                    self.logger.warning(f"Failed to forward to {chat_id}: {e}")
         elif "audio" in msg:
             # AUDIO MUST use requests due to 'thumb' requirement
             return await self.compose_audio_instruction(bot, msg["audio"], caption, parse_mode)
