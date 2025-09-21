@@ -15,6 +15,7 @@ class ArgManagerBot(BaseBot):
         super().__init__(logger, redis_helper)
         self.waiting_for_message = set()
         self.broadcast_password = os.getenv("MANAGER_PASSWORD")
+        self.channel_id = int(os.getenv("SOURCE_CHANNEL_ID"))
         if not self.broadcast_password:
             raise RuntimeError("MANAGER_PASSWORD is not set in environment variables")
 
@@ -23,7 +24,10 @@ class ArgManagerBot(BaseBot):
         app.add_handler(CommandHandler("auth", self.handle_auth))
         app.add_handler(CommandHandler("send", self.handle_send))
         app.add_handler(CommandHandler("top", self.handle_top))
+        add.add_handler(CommandHandler("recharge", self.handle_recharge))
         app.add_handler(MessageHandler(filters.ALL, self.handle_message))
+        app.add_handler(CommandHandler("clear", self.handle_clear))
+
 
     async def handle_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text(
@@ -66,6 +70,28 @@ class ArgManagerBot(BaseBot):
         message_dict = message.to_dict()
         self.redis.publish_raw_dict(message_dict)
 
+    async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        message: Message = update.message
+        chat_id = update.effective_chat.id
+
+        # if it's a /send flow, keep old behavior
+        if chat_id in self.waiting_for_message:
+            self.waiting_for_message.remove(chat_id)
+            message_dict = message.to_dict()
+            self.redis.publish_raw_dict({
+                "content_type": "message_dict",
+                "message": message_dict
+            })
+            return
+
+        # if the message is from the source channel, broadcast forward instructions
+        if message.chat and message.chat.id == CHANNEL_ID:
+            self.redis.publish_raw_dict({
+                "content_type": "forward_from_channel",
+                "from_chat_id": CHANNEL_ID,
+                "message_id": message.message_id,
+            })
+
     async def handle_top(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         chat_id = update.effective_chat.id
         if not self.redis.is_authorized(chat_id):
@@ -104,3 +130,14 @@ class ArgManagerBot(BaseBot):
 
         response_text = "🏆 Топ участников по активности:\n" + "\n".join(response_lines)
         await update.message.reply_text(response_text, parse_mode="HTML")
+
+    async def handle_clear(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        chat_id = update.effective_chat.id
+        if not self.redis.is_authorized(chat_id):
+            await update.message.reply_text("Вы не авторизованы. Используйте /auth.")
+            return
+
+        count = self.redis.reset_all_counts()
+        await update.message.reply_text(
+            f"Счётчики активности сброшены до 0 для {count} чатов."
+        )
