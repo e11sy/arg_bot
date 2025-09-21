@@ -85,10 +85,10 @@ class ArgManagerBot(BaseBot):
             return
 
         # if the message is from the source channel, broadcast forward instructions
-        if message.chat and message.chat.id == CHANNEL_ID:
+        if message.chat and message.chat.id == self.channel_id:
             self.redis.publish_raw_dict({
                 "content_type": "forward_from_channel",
-                "from_chat_id": CHANNEL_ID,
+                "from_chat_id": self.channel_id,
                 "message_id": message.message_id,
             })
 
