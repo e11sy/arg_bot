@@ -24,8 +24,8 @@ class ArgManagerBot(BaseBot):
         app.add_handler(CommandHandler("auth", self.handle_auth))
         app.add_handler(CommandHandler("send", self.handle_send))
         app.add_handler(CommandHandler("top", self.handle_top))
-        app.add_handler(MessageHandler(filters.ALL, self.handle_message))
         app.add_handler(CommandHandler("clear", self.handle_clear))
+        app.add_handler(MessageHandler(~filters.ALL, self.handle_message))
 
 
     async def handle_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -56,18 +56,6 @@ class ArgManagerBot(BaseBot):
 
         self.waiting_for_message.add(chat_id)
         await update.message.reply_text("Жду ваше сообщение для рассылки (текст, фото, аудио и т.д.).")
-
-    async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        chat_id = update.effective_chat.id
-        message: Message = update.message
-
-        if chat_id not in self.waiting_for_message:
-            return
-
-        self.waiting_for_message.remove(chat_id)
-
-        message_dict = message.to_dict()
-        self.redis.publish_raw_dict(message_dict)
 
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         message: Message = update.message
