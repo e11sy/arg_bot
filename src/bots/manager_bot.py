@@ -24,7 +24,6 @@ class ArgManagerBot(BaseBot):
         app.add_handler(CommandHandler("auth", self.handle_auth))
         app.add_handler(CommandHandler("send", self.handle_send))
         app.add_handler(CommandHandler("top", self.handle_top))
-        add.add_handler(CommandHandler("recharge", self.handle_recharge))
         app.add_handler(MessageHandler(filters.ALL, self.handle_message))
         app.add_handler(CommandHandler("clear", self.handle_clear))
 
