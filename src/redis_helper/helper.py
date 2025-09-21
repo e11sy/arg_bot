@@ -167,3 +167,26 @@ class RedisHelper:
 
         script = self.client.register_script(lua_script)
         script(keys=[key], args=args)
+    # In RedisHelper class
+
+    def reset_all_counts(self) -> int:
+      try:
+          pattern = f"{self.METRICS_KEY_PREFIX}:*"
+          pipe = self.client.pipeline()
+          updated = 0
+
+          # Iterate safely without blocking Redis (avoid KEYS)
+          for key in self.client.scan_iter(pattern):
+              # Only reset if the hash exists and has a 'count' field
+              if self.client.hexists(key, "count"):
+                  pipe.hset(key, "count", 0)
+                  updated += 1
+
+          if updated > 0:
+              pipe.execute()
+
+          logger.info(f"Reset counters to 0 for {updated} chats.")
+          return updated
+      except Exception as e:
+          logger.error(f"Error resetting counters: {e}")
+          return 0
