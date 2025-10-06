@@ -130,6 +130,8 @@ class ArgBot(BaseBot):
         return ImageFont.truetype(str(FONT_SHARP_PATH), 12), ImageFont.truetype(str(FONT_ARG_PATH), 12)
 
     async def compose_send_instruction(self, bot: Bot, msg: dict, caption: str, parse_mode: str):
+        self.logger(f'Composing send instructions for {msg}');
+
         if "photo" in msg:
             return {
                 "send_method": bot.send_photo,
@@ -263,7 +265,7 @@ class ArgBot(BaseBot):
                     self.logger.warning("Unsupported content_type.")
                     continue
 
-                msg = item["message"]
+                msg = item.get("message")
                 chat_ids = self.redis.get_all_chat_ids()
                 caption = msg.get("caption", "")
                 parse_mode = "HTML"
