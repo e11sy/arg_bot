@@ -54,12 +54,16 @@ class ArgManagerBot(BaseBot):
             await update.message.reply_text("Вы не авторизованы. Используйте /auth.")
             return
 
+        self.logger.info(f'Жду сообщение рассылки для чата {chat_id}');
+
         self.waiting_for_message.add(chat_id)
         await update.message.reply_text("Жду ваше сообщение для рассылки (текст, фото, аудио и т.д.).")
 
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         message: Message = update.message
         chat_id = update.effective_chat.id
+
+        self.logger.info(f'Получил сообщение рассылки в чате {chat_id}, текущий список ожидания: {self.waiting_for_message}');
 
         # if it's a /send flow, keep old behavior
         if chat_id in self.waiting_for_message:

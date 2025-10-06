@@ -257,6 +257,7 @@ class ArgBot(BaseBot):
 
     async def _broadcast_loop(self, bot: Bot):
         async for item in self.redis.subscribe_to_broadcasts():
+            self.logger.info(f'Новое сообщение в redis channel {item}')
             try:
                 if item.get("content_type") != "message_dict":
                     self.logger.warning("Unsupported content_type.")

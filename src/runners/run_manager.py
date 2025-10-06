@@ -12,6 +12,8 @@ if __name__ == "__main__":
       format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
       handlers=[logging.StreamHandler(sys.stdout)]
     )
+    for noisy in ["httpx", "telegram", "apscheduler"]:
+      logging.getLogger(noisy).setLevel(logging.WARNING)
     logger = logging.getLogger("manager-bot")
     redis = RedisHelper(REDIS_URL)
     bot = ArgManagerBot(logger, redis)
