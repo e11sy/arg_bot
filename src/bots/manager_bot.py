@@ -25,7 +25,7 @@ class ArgManagerBot(BaseBot):
         app.add_handler(CommandHandler("send", self.handle_send))
         app.add_handler(CommandHandler("top", self.handle_top))
         app.add_handler(CommandHandler("clear", self.handle_clear))
-        app.add_handler(MessageHandler(~filters.ALL, self.handle_message))
+        app.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, self.handle_message))
         app.add_handler(MessageHandler(filters.UpdateType.CHANNEL_POST, self.handle_channel_post))
 
     async def handle_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
