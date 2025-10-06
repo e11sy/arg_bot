@@ -3,7 +3,7 @@ name: Deploy Bots to Railway
 on:
   push:
     branches:
-      - main
+      - prod
 
 jobs:
   deploy:

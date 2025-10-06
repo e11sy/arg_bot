@@ -172,21 +172,37 @@ class ArgBot(BaseBot):
                     "parse_mode": parse_mode,
                 }
             }
-        elif ctype == "forward_from_channel":
-            from_chat_id = item["from_chat_id"]
-            msg_id = item["message_id"]
-            chat_ids = self.redis.get_all_chat_ids()
+        elif msg.get("content_type") == "forward_from_channel":
+          from_chat_id = msg["from_chat_id"]
+          msg_id = msg["message_id"]
+          chat_ids = self.redis.get_all_chat_ids()
+          for chat_id in chat_ids:
+              try:
+                  await bot.forward_message(
+                      chat_id=chat_id,
+                      from_chat_id=from_chat_id,
+                      message_id=msg_id
+                  )
+                  self.logger.info(f"Forwarded channel message {msg_id} to {chat_id}")
+              except Exception as e:
+                  self.logger.warning(f"Failed to forward to {chat_id}: {e}")
+          return None
 
-            for chat_id in chat_ids:
-                try:
-                    await bot.forward_message(
-                        chat_id=chat_id,
-                        from_chat_id=from_chat_id,
-                        message_id=msg_id
-                    )
-                    self.logger.info(f"Forwarded channel message {msg_id} to {chat_id}")
-                except Exception as e:
-                    self.logger.warning(f"Failed to forward to {chat_id}: {e}")
+        # elif ctype == "forward_from_channel":
+        #     from_chat_id = item["from_chat_id"]
+        #     msg_id = item["message_id"]
+        #     chat_ids = self.redis.get_all_chat_ids()
+
+        #     for chat_id in chat_ids:
+        #         try:
+        #             await bot.forward_message(
+        #                 chat_id=chat_id,
+        #                 from_chat_id=from_chat_id,
+        #                 message_id=msg_id
+        #             )
+        #             self.logger.info(f"Forwarded channel message {msg_id} to {chat_id}")
+        #         except Exception as e:
+        #             self.logger.warning(f"Failed to forward to {chat_id}: {e}")
         elif "audio" in msg:
             # AUDIO MUST use requests due to 'thumb' requirement
             return await self.compose_audio_instruction(bot, msg["audio"], caption, parse_mode)
