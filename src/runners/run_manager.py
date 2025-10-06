@@ -1,12 +1,17 @@
 from telegram.ext import Application
 from bots.manager_bot import ArgManagerBot
 from redis_helper.helper import RedisHelper
-import logging, os
+import logging, os, sys
 
 TOKEN = os.getenv("MANAGER_BOT_TOKEN")
 REDIS_URL = os.getenv("REDIS_URL")
 
 if __name__ == "__main__":
+    logging.basicConfig(
+      level=logging.INFO,
+      format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+      handlers=[logging.StreamHandler(sys.stdout)]
+    )
     logger = logging.getLogger("manager-bot")
     redis = RedisHelper(REDIS_URL)
     bot = ArgManagerBot(logger, redis)
