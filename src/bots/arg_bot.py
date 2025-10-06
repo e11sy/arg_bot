@@ -265,7 +265,7 @@ class ArgBot(BaseBot):
                     self.logger.warning("Unsupported content_type.")
                     continue
 
-                msg = item.get("message")
+                msg = item.get("message", {}).get("message", item)
                 chat_ids = self.redis.get_all_chat_ids()
                 caption = msg.get("caption", "")
                 parse_mode = "HTML"
