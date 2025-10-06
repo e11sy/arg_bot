@@ -130,7 +130,7 @@ class ArgBot(BaseBot):
         return ImageFont.truetype(str(FONT_SHARP_PATH), 12), ImageFont.truetype(str(FONT_ARG_PATH), 12)
 
     async def compose_send_instruction(self, bot: Bot, msg: dict, caption: str, parse_mode: str):
-        self.logger(f'Composing send instructions for {msg}');
+        self.logger.info(f'Composing send instructions for {msg}');
 
         if "photo" in msg:
             return {
